@@ -1,0 +1,14 @@
+{
+  "name": "email",
+  "version": "1.0.0",
+  "description": "Podscript email generation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mjml": "^4.13.0"
+  }
+}

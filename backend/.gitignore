@@ -1,0 +1,9 @@
+# virtual environment
+__pycache__
+/podscript-env
+
+# misc
+.DS_Store
+
+# local env files
+.env*.local

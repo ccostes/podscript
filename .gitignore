@@ -1,0 +1,7 @@
+# virtual environment
+__pycache__
+
+# misc
+.DS_Store
+
+/transcribe
