@@ -1,6 +1,7 @@
 # virtual environment
 __pycache__
 /podscript-env
+/podscript_env
 
 # misc
 .DS_Store

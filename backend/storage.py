@@ -1,7 +1,7 @@
 import re, unicodedata, datetime, time, logging
-import mysql
+import mariadb
 import feedparser
-from db import connect, create_tables
+from db import connect, insert_user, insert_subscription, update_subscription, get_subscriptions, get_user_by_uuid
 """
 Provide an interface to the underlying SQL storage layer for podcasts, episodes, 
 users, and subscriptions.
@@ -34,7 +34,7 @@ def insert_podcast(connection, apple_id, data):
     author = "" if data.feed.author is None else data.feed.author
     link = "" if data.feed.link is None else data.feed.link
     description = "" if data.feed.description is None else data.feed.description
-    artwork_url = "" if data.feed.image.url is None else data.feed.image.url
+    artwork_url = "" if data.feed.image.href is None else data.feed.image.href
     http_last_modified = "" if data.modified is None else data.modified
     http_etag = "" if data.etag is None else data.etag
     download_folder = to_directory_name(author + " " + title)
@@ -70,7 +70,7 @@ def insert_podcast(connection, apple_id, data):
             ])
             connection.commit()
             row = cursor.lastrowid
-        except mysql.connector.errors.IntegrityError:
+        except mariadb.connector.errors.IntegrityError:
             # record already exists - update
             logging.info(f"upsert_podcast podcast already exists - updating url: {url}")
             update_query = "UPDATE podcasts SET http_last_modified = %s, http_etag = %s WHERE url = %s"
@@ -168,49 +168,6 @@ def import_feed(connection, apple_id, url):
     podcast_id = insert_podcast(connection=connection, apple_id=apple_id, data=d)
     insert_new_episodes(connection=connection, data=d, podcast_id=podcast_id)
 
-def insert_user(connection, user_id, token, email):
-    logging.info(f"Inserting user - ID: {user_id}")
-    insert_query = "INSERT IGNORE INTO users (uuid, token, email) VALUES (%s, %s, %s)"
-    with connection.cursor() as cursor:
-        cursor.execute(insert_query, [user_id, token, email])
-    connection.commit()
-
-def insert_subscription(connection, user_id, podcast_id):
-    logging.info(f"Inserting subscription to podcast {podcast_id} for user {user_id}")
-    insert_query = """
-        INSERT INTO subscriptions (user_id, podcast_id) VALUES (%s, %s)
-    """
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM subscriptions WHERE user_id = %s AND podcast_id = %s", [user_id, podcast_id])
-        res = cursor.fetchall()
-        if res == []:
-            cursor.execute(insert_query, [user_id, podcast_id])
-        else:
-            logging.info("Subscription for user and podcast already exists")
-    connection.commit()
-
-def update_subscription(connection, sub):
-    logging.info(f"Updating subscription: {sub}")
-    with connection.cursor() as cursor:
-        cursor.execute("""UPDATE subscriptions SET 
-            podcast_id = %s, 
-            last_published = %s, 
-            last_published_id = %s, 
-            pending_publish = %s, 
-            pending_publish_id = %s""", 
-            [
-                sub.get('podcast_id'), 
-                sub.get('last_published'), 
-                sub.get('last_published_id'), 
-                sub.get('pending_publish'), 
-                sub.get('pending_publish_id')])
-    connection.commit()
-
-def get_subscriptions(connection):
-    with connection.cursor(buffered = True, dictionary=True) as cursor:
-        cursor.execute("SELECT * FROM subscriptions")
-        return cursor.fetchall()
-
 def get_pending_subscriptions(connection):
     with connection.cursor(buffered = True, dictionary=True) as cursor:
         cursor.execute("SELECT * FROM subscriptions WHERE pending_publish != NULL")
@@ -233,7 +190,7 @@ def get_next_episode(connection, podcast_id, datetime):
     cursor = connection.cursor(buffered = True, dictionary=True)
     cursor.execute(query, [podcast_id, datetime])
     t = cursor.fetchone()
-    return None if t is None else t
+    return t
 
 # Returns a datetime of the most recent episode for the podcast with the given url, or None
 def get_most_recent_episode(connection, podcast_id):
@@ -244,15 +201,6 @@ def get_most_recent_episode(connection, podcast_id):
     cursor.execute(query, [podcast_id])
     t = cursor.fetchone()
     return t
-
-def get_user_by_uuid(connection, uuid):
-    with connection.cursor(buffered=True, dictionary=True) as cursor:
-        cursor.execute("SELECT * FROM users where uuid = %s", [uuid])
-        result = cursor.fetchall()
-        if len(result) == 1:
-            return result[0]
-        else:
-            return None
 
 def get_podcast_by_url(connection, url):
     with connection.cursor(buffered=True, dictionary=True) as cursor:
@@ -280,6 +228,15 @@ def get_episode(connection, id):
         cursor.execute("SELECT * FROM episodes WHERE id = %s", [id])
         result = cursor.fetchall()
     return result
+
+def get_episode_path(connection, id):
+    with connection.cursor(buffered=True, dictionary=True) as cursor:
+        cursor.execute("""SELECT episodes.id, published, download_folder FROM episodes 
+        JOIN podcasts ON podcasts.id = episodes.podcast_id
+        WHERE episodes.id = %s""", [id])
+        res = cursor.fetchone()
+        return res['download_folder'] + "/" + res['published'].strftime("%Y-%m-%d_%H-%M-%S") + "_" + res['id']
+
 
 def set_episode_archive(connection, id, archive):
     with connection.cursor(buffered=True, dictionary=True) as cursor:
@@ -333,7 +290,6 @@ def update_feeds(connection):
 # Update feeds
 def main():
     connection = connect()
-    # create_tables(connection)
     # import_feed(connection, "feed.atom")
     # import_feed(connection, "https://feeds.simplecast.com/54nAGcIl")
     update_feeds(connection=connection)
