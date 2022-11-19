@@ -4,6 +4,9 @@ pathlib
 protobuf
 psycopg2-binary
 pyannote.audio
+git+https://github.com/pyannote/pyannote-audio
 pydub
+python-dotenv
 sgmllib3k
-webvtt
+whisper
+git+https://github.com/openai/whisper.git

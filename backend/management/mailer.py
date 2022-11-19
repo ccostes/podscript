@@ -1,7 +1,8 @@
 import logging, json
 import asyncio
 import sys
-sys.path.append("../util")
+from pathlib import Path
+sys.path.append(str(Path.cwd().parent / "util"))
 from util.supabase import supa_connect
 from util.r2 import r2_retrieve
 from util.mail import publish

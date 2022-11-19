@@ -1,4 +1,4 @@
-import os, sys, time, logging
+import logging
 from pydub import AudioSegment
 from pyannote.audio import Pipeline
 import whisper
@@ -59,37 +59,68 @@ def pad_audio(audio, tracks, out_filename):
     sounds.export(out_filename, format="wav")
     return tracks
 
-# Expects args to be a dict with keys 'audio_file' 'speakers_csv' and 'out_csv'
-def pad_speakers(wav_filename, tracks, out_filename, padded_filename):
-    audio = AudioSegment.from_wav(wav_filename)        
-    tracks = pad_audio(audio, tracks, padded_filename)
+def gen_transcript(tracks, segments):
+    transcript = []
 
-    with open(out_filename, 'w', newline='') as f:
-        field_labels = ['label', 'start', 'end', 'padded_start', 'padded_end']
-        writer = csv.DictWriter(f, fieldnames=field_labels)
-        writer.writeheader()
-        writer.writerows(tracks)
+    label_iter = iter(tracks)
+    # Add first label
+    next_track = next(label_iter)
+    # transcript.append(f"[Speaker {next_track['label'][8:]}]\n")
+    block = {'speaker': next_track['label'], 'time': 0, 'text': []}
+    next_track = next(label_iter)
+
+    for caption in segments:
+        caption_start_sec = caption['start']
+        caption_end_sec = caption['end']
+        # label is none if we run out, otherwise check if the label should be inserted
+        if next_track is not None:
+            next_track_start = float(next_track['padded_start'])
+            next_track_end = float(next_track['padded_end'])
+            # check whether the current caption is more in the previous or next track
+            if caption_end_sec > next_track_start:
+                caption_len = caption_end_sec - caption_start_sec
+                pct_in_curr_track = (next_track_start - caption_start_sec) / caption_len
+                if pct_in_curr_track > 0.5:
+                    # majority in current track, print caption first then next track label
+                    block['text'].append(caption['text'])
+                    transcript.append(block)
+                    block = {
+                        'speaker': next_track['label'],
+                        'time': next_track['start'],
+                        'text': []
+                        }
+                else: 
+                    # majority in next track, print next track label first, then caption
+                    transcript.append(block)
+                    block = {
+                        'speaker': next_track['label'],
+                        'time': next_track['start'],
+                        'text': []
+                        }
+                    block['text'].append(caption['text'])
+                try:
+                    next_track = next(label_iter)
+                except StopIteration:
+                    next_track = None
+            else:
+                # whole caption in current track, just append it
+                block['text'].append(caption['text'])
+        else:
+            # no more tracks, just append the rest of the captions 
+            block['text'].append(caption['text'])
+    return transcript
 
 def transcribe(filename):
-    model = whisper.load_model("small.en")
-    result = model.transcribe(filename, beam_size=5, best_of=5)
-    return result
-
-def main(filename, out_filename):
     # intermediate file extensions
-    ext_transcription = ".vtt"
     ext_audio_padded = "_padded.wav"
-    ext_speakers_csv = "_speakers.csv"
-    ext_speakers_padded_csv = "_speakers_padded.csv"
     base = filename.split('.')[0]
     padded_audio = base + ext_audio_padded
-    speakers_csv = base + ext_speakers_csv
 
     # == Diarize ==
     # pad the beginning of the input with silence - pyannote struggles with the very start
     logging.info("Prepending Silence...")
     padded_filename = "tmp_padded.wav"
-    audio = AudioSegment.from_wav(audio_file)
+    audio = AudioSegment.from_wav(filename)
     prepend_silence(audio).export(padded_filename, format="wav")
 
     # perform diarization
@@ -104,11 +135,16 @@ def main(filename, out_filename):
 
     # == Transcribe ==
     model = whisper.load_model("small.en")
-    result = model.transcribe(padded_audio, beam_size=5, best_of=5)
+    result = model.transcribe(filename, beam_size=5, best_of=5)
+    segments = result["segments"]
 
-    # 
+    # == Generate Transcript ==
+    transcript = gen_transcript(tracks=tracks, segments=segments)
+    return transcript
 
-
+def main():
+    transcript = transcribe(filename="daily_clip.wav")
+    print(transcript)
 
 if __name__ == "__main__":
     logging.basicConfig(

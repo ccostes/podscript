@@ -1,5 +1,6 @@
 asyncio
 boto3
+dotenv
 feedparser
 pathlib
 protobuf

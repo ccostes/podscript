@@ -5,7 +5,8 @@ import asyncio
 import json, logging, datetime, time, re, unicodedata
 from urllib.parse import urlparse
 import sys
-sys.path.append("../util")
+from pathlib import Path
+sys.path.append(str(Path.cwd().parent))
 from util.supabase import supa_connect
 import feedparser
 
