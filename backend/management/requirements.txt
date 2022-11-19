@@ -1,8 +1,8 @@
 asyncio
 boto3
-dotenv
 feedparser
 pathlib
 protobuf
 psycopg2-binary
+python-dotenv
 sgmllib3k

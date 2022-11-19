@@ -233,7 +233,7 @@ def main():
         conn.notifies.clear()
 
     logging.info("Listening for Supabase new_podcast notifications!")
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     loop.add_reader(conn, handle_notify)
     loop.run_forever()
 

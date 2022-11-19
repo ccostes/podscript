@@ -2,7 +2,7 @@ import logging, json
 import asyncio
 import sys
 from pathlib import Path
-sys.path.append(str(Path.cwd().parent / "util"))
+sys.path.append(str(Path.cwd().parent))
 from util.supabase import supa_connect
 from util.r2 import r2_retrieve
 from util.mail import publish
@@ -56,7 +56,7 @@ def main():
         conn.notifies.clear()
 
     logging.info("Listening for Supabase new_transcript notifications!")
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     loop.add_reader(conn, handle_notify)
     loop.run_forever()
 
