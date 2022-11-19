@@ -11,18 +11,18 @@ Sends email
 env = dotenv_values('.env.local')
 from_email = 'Podscript<noreply@podscript.org>'
 
-def publish(to_email, subject, body, art_url):
+def publish(to_email, subject, body, image_url):
     message = MIMEMultipart('mixed')
     message['Subject'] = subject
     message["From"] = from_email
     message["To"] = to_email
     message.attach(MIMEText(body, "html"))
 
-    with urllib.request.urlopen(art_url) as f:
-        art_img = MIMEImage(f.read())
-    art_path = Path() / art_url
-    art_img.add_header('Content-ID', f'<{art_path.name}>')
-    message.attach(art_img)
+    with urllib.request.urlopen(image_url) as f:
+        img = MIMEImage(f.read())
+    img_path = Path() / image_url
+    img.add_header('Content-ID', f'<{img_path.name}>')
+    message.attach(img)
     
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
@@ -37,7 +37,7 @@ def main():
         to_email='costes.c@gmail.com', 
         subject = 'The Daily: Another Trump Campaign', 
         body=body,
-        art_url=art_url
+        image_url=art_url
     )
 
 if __name__ == "__main__":

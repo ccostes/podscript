@@ -2,53 +2,36 @@
 
 Directories:
 * **app** - Supabase frontend 
-* **backend** - Scripts for running the backend feed and subscription processing
+* **supabase** - supabase backend stuff - DB schema, triggers, functions, and scripts
 
 # Data Schema
-Data is separated between supabase and the local DB. Supabase contains all user and subscription records, and the local database contains podcast and episode data. 
+See `./supabase/db/readme.md`
 
-## Supabase Schemas
-### Subscriptions
-* id
-* created_at
-* user_id - supabase ID of the user who owns the subscription
-* podcast_apple_id - apple ID for the podcast; not guaranteed to be present if we support custom feed URLs
-* podcast_url - the feed URL of the podcast; this is our primary identifier of podcasts
-* last_published - datetime when the subscription was last published
-* last_published_id - our episode ID of the last episode that was published for the subscription
-* last_published_guid - guid of the last episode published, mostly for recovery purposes
+# Data Flows
 
-# Backend Functions
-The backend is responsible for podcasts and subscription publishing: maintaining a catalog of podcast feeds for all subscriptions, periodically updating those feeds to store new episode records, processing new episodes, and publishing subscriptions when there are new episodes available. 
+## Account Verification
+Account verification triggers the creation of:
+* account token
+* podcast (if doesn't exist)
+* subscription
 
-When a new episode is available it needs to start the transcription job pipeline and store the resulting data (transcript json and txt - don't need audio data).
+The flow is as follows:
+Verification link clicked -> 
+`email_confirmed_at` on auth.users updated -> triggers `user_verified()` function
+  - creates token
+  - creates podcast if not exists -> triggers `new_podcast()`
+    - sends notify on `new_podcast` channel
+  - creates subscription
 
-When subscriptions have new episodes available, emails need to be published.
+## New Podcast
+When a new podcast is inserted into the `podcasts` table it sends a notify on `new_podcast`
 
-## Subscriptions
-Subscriptions are periodically processed. 
+The `./supabase/db/feeds.py` script listens to this, starting the feed update process which will populated the podcast record with all the data and insert the most recent episode.
 
-First we check for new subscriptions, filtering for last_published and pending_publish both null:
- - check if we have the podcast feed url in our db, if not, add it
- - set pending_publish to the most recent episode
+## New Episode
+When a new episode is inserted into the `episodes` table it triggers `new_episode()` which updates all subscriptions for that podcast with `pending_publish_id` = NULL, setting `pending_publish_id` to the newly inserted episode ID.
 
-Next we check for subscriptions that have a publish pending:
-- check if the pending episode processing is complete
-- if so, publish!
+It also notifies on `new_episode` which kicks off transcription generation.
 
-## Podacsts
-Podcasts are periodically polled to check for new episodes. If a new episode is added:
-- set pending_publish to the new episode for all subscriptions for this podcast URL with pending_publish = null
-
-## Episode Processing
-Lastly, need to manage the processing pipeline for episodes. This job is on the processing machine (windows laptop) and periodically polls, querying for episodes where archive=0 and state != 4. 
-
-Episodes are processed serially, and prioritized by oldest publish date and highest processing state. A single directory is used to hold intermediate files during processing and cleaned out between runs.
-
-Switch on state:
-  - 0: ready to process 
-    - download audio file into processing dir and create jobfile to kick off stage 1 of pipeline
-  - 1: Stage 1 (padding and diarization) complete, ready for transcription
-    - update job file and rename to kick of transcription
-  - 2: transcription complete, final transcript and email files ready
-    - copy artifacts to pi storage and clean up processing folder
+## New Transcript
+When a new transcript is complete, the email html is uploaded to R2 and the object ID is set on the episode `filename` column. This update triggers the `new_transcript()` function which notifies on `new_transcript`. The mailer script listens to `new_transcript` and processes subscription publishing for the new transcript.

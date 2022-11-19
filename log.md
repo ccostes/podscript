@@ -1,3 +1,25 @@
+# 11/17
+- Thinking about it more last night I can simplify this a lot further
+  - Don't need to be storing episode records for episodes I don't care about
+    - when importing a new feed, just get the most recent one
+    - had this idea going into the project that I'll get a big mass of data and be able to do 'something' with it
+      - that may be a good idea if the data would be lost, but in this case it's available any time I want it
+    - I was worried that the podcast/episode data would large which is partly drove my decision to have a separate database from supabase locally
+      - debatable whether this should have been a concern at all
+      - either way, since I'm only storing episodes I've published this is definitely not a concern
+      - will store everything in supabase
+  - lastly, was also worried about storing the artifact data (transcripts &c)
+    - R2 lets you store like 100GB for free, so I'll just put it there
+  - This greatly simplifies the overall architecture - the only thing I need to manage is the windows laptop doing the transcriptions
+    - no databases, no syncing files
+
+# 11/16
+- did some work getting things cleaned up a bit and checked in to git
+- moved over to the pi
+- but talking to craig I'm reconsidering replicating things from supabase to a local db
+  - especially since I'm now talking to the supabase db and it's just as easy as a local
+  - want to maintain users and subscriptions on supabase
+  - backend just manages podcasts and emails
 # 11/15
 - deciding on file storage schema
   - within podcasts folder `/storage/<podcast download directory>/<publish date>_<guid>`

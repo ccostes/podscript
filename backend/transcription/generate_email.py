@@ -1,15 +1,16 @@
 import logging, json 
 import pystache
 from pathlib import Path
+
 """
 Generate the html email content for a given episode transcript.
 
 Expects art image be attached to the email with the same file name as the 
 art_url filename on the podcast record.
 """
-email_template = (Path() / 'template.html').read_text()
+email_template = (Path() / '../../email_template/template.html').read_text()
 
-def generate(episode, transcript_file):
+def generate_email(episode, transcript_file):
     with open(transcript_file) as f:
         transcript = json.load(f)
     transcript_html = ""
@@ -44,4 +45,4 @@ if __name__ == "__main__":
         'art_url': "https://is1-ssl.mzstatic.com/image/thumb/Podcasts115/v4/1c/ac/04/1cac0421-4483-ff09-4f80-19710d9feda4/mza_12421371692158516891.jpeg/600x600bb.jpg",
     }
     with open('email.html', 'w') as f:
-        f.write(generate(episode=episode, transcript_file='transcript.json'))
+        f.write(generate_email(episode=episode, transcript_file='transcript.json'))

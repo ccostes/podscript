@@ -1,0 +1,7 @@
+asyncio
+boto3
+feedparser
+pathlib
+protobuf
+psycopg2-binary
+sgmllib3k

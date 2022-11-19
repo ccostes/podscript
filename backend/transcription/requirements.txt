@@ -1,0 +1,9 @@
+asyncio
+boto3
+pathlib
+protobuf
+psycopg2-binary
+pyannote.audio
+pydub
+sgmllib3k
+webvtt
