@@ -11,7 +11,10 @@ begin
   return new;
   
   -- Notify on new_episode
-  payload := json_build_object('record',row_to_json(new));
+  payload := json_build_object(
+    'episode',row_to_json(new),
+    'podcast',(SELECT * FROM podcasts WHERE id = new.podcast_id)
+    );
   -- notify user verified
   PERFORM pg_notify('new_episode', payload);
 end;
