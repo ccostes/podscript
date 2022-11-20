@@ -2,6 +2,8 @@ import logging, smtplib, ssl
 from pathlib import Path
 from dotenv import dotenv_values
 import urllib.request
+from urlparse import urlparse
+from os.path import splitext
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -10,6 +12,12 @@ Sends email
 """
 env = dotenv_values('.env.local')
 from_email = 'Podscript<noreply@podscript.org>'
+
+def get_ext(url):
+    """Returns the file extension for a url, or ''."""
+    parsed = urlparse(url)
+    root, ext = splitext(parsed.path)
+    return ext
 
 def publish(to_email, subject, body, image_url):
     message = MIMEMultipart('mixed')
@@ -20,8 +28,8 @@ def publish(to_email, subject, body, image_url):
 
     with urllib.request.urlopen(image_url) as f:
         img = MIMEImage(f.read())
-    img_path = Path() / image_url
-    img.add_header('Content-ID', f'<{img_path.name}>')
+    img_extension = get_ext(image_url)
+    img.add_header('Content-ID', f'<logo{img_extension}>')
     message.attach(img)
     
     context = ssl.create_default_context()

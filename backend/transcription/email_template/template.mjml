@@ -3,7 +3,7 @@
     <mj-section>
       <mj-column>
         <mj-text align="center" font-size="10px" color="#626262">Generated for you with 💛 by Podscript</mj-text>
-        <mj-image width="100px" href="{{link}}" src="cid:{{art}}"></mj-image>
+        <mj-image width="100px" href="{{link}}" src="cid:logo{{image_extension}}"></mj-image>
         <mj-text align="center" font-size="22px" font-family="Helvetica, Arial, sans-serif">
           {{episode_title}}
         </mj-text>
