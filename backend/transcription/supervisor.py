@@ -8,7 +8,6 @@ sys.path.append(str(Path.cwd().parent))
 from util.r2 import r2_upload
 from util.supabase import supa_connect
 from transcribe import transcribe
-from generate_email import generate_email
 
 storage_dir = Path("C:\\Users\\coste\\podscript_data")
 
