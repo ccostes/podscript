@@ -1,7 +1,11 @@
-import logging
+import logging, datetime
 from pydub import AudioSegment
 from pyannote.audio import Pipeline
 import whisper
+
+import nltk
+from nltk import ne_chunk, pos_tag, word_tokenize
+from nltk.tree import Tree
 
 # spacer duration (ms)
 spacermilli = 2000
@@ -36,13 +40,13 @@ def get_speakers(dz):
             tracks.append({'label': speaker, 'start': start, 'end': end})
     return tracks
 
-def pad_audio(audio, tracks, out_filename):
+def pad_audio(audio, tracks, pad_duration, out_filename):
     """
     Given an audio file and a list of tracks [speaker_label, start, end] pad the 
     audio file with silence before each track audio segment and return the track list
     with the start/end time of each track in the padded audio file
     """
-    spacer = AudioSegment.silent(duration=spacermilli)
+    spacer = AudioSegment.silent(duration=pad_duration)
     sounds = AudioSegment.silent(duration=0)
     for t in tracks:
         # append silence padding
@@ -59,17 +63,18 @@ def pad_audio(audio, tracks, out_filename):
     sounds.export(out_filename, format="wav")
     return tracks
 
-def gen_transcript(tracks, segments):
+def merge_dz_segments(tracks, segments):
     transcript = []
-
     label_iter = iter(tracks)
     # Add first label
     next_track = next(label_iter)
     # transcript.append(f"[Speaker {next_track['label'][8:]}]\n")
-    block = {'speaker': next_track['label'], 'time': 0, 'text': []}
+    block = {'speaker': next_track['label'], 'time': 0, 'text': ""}
     next_track = next(label_iter)
-
+    # Iterate through transcribed segments
     for caption in segments:
+        if len(caption['text']) == 0:
+            continue
         caption_start_sec = caption['start']
         caption_end_sec = caption['end']
         # label is none if we run out, otherwise check if the label should be inserted
@@ -82,12 +87,12 @@ def gen_transcript(tracks, segments):
                 pct_in_curr_track = (next_track_start - caption_start_sec) / caption_len
                 if pct_in_curr_track > 0.5:
                     # majority in current track, print caption first then next track label
-                    block['text'].append(caption['text'])
+                    block['text'] += caption['text']
                     transcript.append(block)
                     block = {
                         'speaker': next_track['label'],
                         'time': next_track['start'],
-                        'text': []
+                        'text': ""
                         }
                 else: 
                     # majority in next track, print next track label first, then caption
@@ -95,19 +100,55 @@ def gen_transcript(tracks, segments):
                     block = {
                         'speaker': next_track['label'],
                         'time': next_track['start'],
-                        'text': []
+                        'text': ""
                         }
-                    block['text'].append(caption['text'])
+                    block['text'] += caption['text']
                 try:
                     next_track = next(label_iter)
                 except StopIteration:
                     next_track = None
             else:
                 # whole caption in current track, just append it
-                block['text'].append(caption['text'])
+                block['text'] += caption['text']
         else:
             # no more tracks, just append the rest of the captions 
-            block['text'].append(caption['text'])
+            block['text'] += caption['text']
+    transcript.append(block)
+    return transcript
+
+def detect_speaker_identification(text):
+    nltk_results = ne_chunk(pos_tag(word_tokenize(text)))
+    for i, result in enumerate(nltk_results):
+        if type(result) == Tree and result.label() == 'PERSON':
+            name = result
+            if nltk_results[i-2][0] == "I":
+                if nltk_results[i-1][0] == "am" or nltk_results[i-1][0] == "'m":
+                    name = []
+                    for nltk_result_leaf in result.leaves():
+                        name.append(nltk_result_leaf[0])
+                    return name
+    return None
+
+def gen_transcript(tracks, segments):
+    transcript = []
+    lines = merge_dz_segments(tracks=tracks, segments=segments)
+    speakers = {}
+    # First pass looking for speaker names
+    for l in lines:
+        if l['speaker'] not in speakers:
+            speakers[l['speaker']] = {'detected':False, 'name': [f"Speaker {len(speakers) + 1}"]}
+        if speakers[l['speaker']]['detected']:
+            continue
+        # See if speaker identified themselves
+        name = detect_speaker_identification(l['text'])
+        if name is not None:
+            # Found a name!
+            speakers[l['speaker']] = {'detected':True, 'name': name}
+    # Second pass, adding lines to transcript with names
+    for l in lines:
+        name = speakers[l['speaker']]
+        l['speaker'] = " ".join(name['name'])
+        transcript.append(l)
     return transcript
 
 def transcribe(filename):
@@ -131,7 +172,8 @@ def transcribe(filename):
     tracks = get_speakers(dz)
 
     # == Pad Speakers ==
-    pad_audio(audio=audio, tracks=tracks, out_filename=padded_audio)
+    # tracks = pad_audio(audio=audio, tracks=tracks, pad_duration=spacermilli, out_filename=padded_audio)
+    tracks = pad_audio(audio=audio, tracks=tracks, pad_duration=0, out_filename=padded_audio)
 
     # == Transcribe ==
     model = whisper.load_model("small.en")

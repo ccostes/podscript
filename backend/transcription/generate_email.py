@@ -8,24 +8,23 @@ Generate the html email content for a given episode transcript.
 Expects art image be attached to the email with the same file name as the 
 art_url filename on the podcast record.
 """
-email_template = (Path() / '../../email_template/template.html').read_text()
+email_template = (Path() / 'email_template/template.html').read_text()
 
-def generate_email(episode, transcript):
+def generate_email(episode, image_extension, transcript):
     transcript_html = ""
     for block in transcript:
         transcript_html += "<p><strong>[" + block['speaker'] + "]</strong></p>"
         for line in block['text']:
             transcript_html += "<p>" + line + "</p>"
-    art_path = Path() / episode['art_url']
 
     template_params = {
         'episode_title': episode['title'],
         'episode_description': episode['description_html'],
         'body': transcript_html,
         'link': episode['link'],
-        'art': art_path.name,
+        'image_extension': image_extension,
     }
-
+    # logging.info(f"Rendering email html with params: {template_params}")
     email_html = pystache.render(email_template, template_params)
     return email_html
 

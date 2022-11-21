@@ -1,0 +1,14 @@
+name: transcription
+
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+
+dependencies:
+  - pip >= 19.1.1
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda >= 11.7
+  - ffmpeg
