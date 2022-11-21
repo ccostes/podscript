@@ -8,15 +8,8 @@ sys.path.append(str(Path.cwd().parent))
 from util.r2 import r2_upload
 from util.supabase import supa_connect
 from transcribe import transcribe
-from generate_email import generate_email
 
 storage_dir = Path("C:\\Users\\coste\\podscript_data")
-
-def get_ext(url):
-    """Return the filename extension from url, or ''."""
-    parsed = urlparse(url)
-    root, ext = splitext(parsed.path)
-    return ext  # or ext[1:] if you don't want the leading '.'
 
 def download_file(url, dst_path):
     uri = urlparse(url)
@@ -65,29 +58,9 @@ def process_episode(cursor, file_prefix, episode):
     logging.info(f"Uploading file {r2_id}...")
     r2_upload(file_path=str(transcript_filepath), id=r2_id)
     
-    # Generate email
-    # email_path = path / 'email.html'
-    # if not email_path.is_file():
-    #     logging.info("Generating email...")
-    #     if episode.get('image_url') is not None:
-    #         image_extension = get_ext(episode['image_url'])
-    #         logging.info(f"Using episode image ({episode['image_url']}) extension: {image_extension}")
-    #     else:
-    #         image_extension = get_ext(episode['podcast_image_url'])
-    #         logging.info(f"Using podcast image ({episode['podcast_image_url']}) extension: {image_extension}")
-    #     email = generate_email(episode=episode, image_extension=image_extension, transcript=transcript)
-    #     # Save email
-    #     email_path.write_text(email)
-
-    #     # Upload email file
-    #     id = f"{episode['published'].strftime('%Y-%m-%d_%H-%M-%S')}_{episode.get('guid')}"
-    #     r2_id = str((Path() / file_prefix / id).as_posix()) + '.html'
-    #     logging.info(f"Uploading file {r2_id}...")
-    #     r2_upload(file_path=str(email_path), id=r2_id)
-
-    #     # Update episode record with email file id
-    #     logging.info("Updating episode record...")
-    #     cursor.execute("UPDATE episodes SET filename = %s WHERE id = %s", [r2_id, episode['id']])
+    # Update episode record with email file id
+    logging.info("Updating episode record...")
+    cursor.execute("UPDATE episodes SET filename = %s WHERE id = %s", [r2_id, episode['id']])
 
 import time
 def main():

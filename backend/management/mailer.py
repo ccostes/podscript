@@ -6,6 +6,13 @@ sys.path.append(str(Path.cwd().parent))
 from util.supabase import supa_connect
 from util.r2 import r2_retrieve
 from util.mail import publish
+from generate_email import generate_body
+
+def get_ext(url):
+    """Return the filename extension from url, or ''."""
+    parsed = urlparse(url)
+    root, ext = splitext(parsed.path)
+    return ext  # or ext[1:] if you don't want the leading '.'
 
 def new_transcript(cursor, episode):
     """
@@ -25,11 +32,18 @@ def new_transcript(cursor, episode):
     # Image is episode image if it has one, otherwise podcast image
     if 'image_url' in episode:
         image_url = episode['image_url']
+        logging.info(f"Using episode image: {image_url}")
     else:
         image_url = podcast['image_url']
+        logging.info(f"Using podcast image: {image_url}")
     
     # Get email HTML from R2
-    email_html = r2_retrieve(episode['filename'])
+    transcript = r2_retrieve(episode['filename'])
+    email_html = generate_body(
+        episode=episode,
+        image_extension=get_ext(image_url),
+        transcript=transcript
+    )
     # Subject is <podcast title>: <episode title>
     subject = f"{podcast['title']}: {episode['title']}"
 
@@ -51,7 +65,8 @@ def main():
         for notify in conn.notifies:
             episode = json.loads(notify.payload)['record']
             logging.info(f"New transcript for episode: {episode['id']}")
-            new_transcript(cursor=cursor, episode=episode)
+            if episode.get('filename') is not None and episode['filename'] != '':
+                new_transcript(cursor=cursor, episode=episode)
         conn.commit()
         conn.notifies.clear()
 

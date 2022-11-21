@@ -36,11 +36,11 @@ def update_podcast(cursor, feed_url, data):
     update['feed_url'] = data.href
     update['title'] = data.feed.title
     update['author'] = data.feed.author
-    update['link'] = data.feed.link
+    update['link'] = data.feed.get('link')
     update['description'] = data.feed.description
     update['image_url'] = data.feed.image.href
-    update['http_modified'] = data.modified
-    update['http_etag'] = data.etag
+    update['http_modified'] = data.get('modified')
+    update['http_etag'] = data.get('etag')
     
     # get existing record
     cursor.execute("SELECT * FROM podcasts WHERE feed_url = %s", [feed_url])

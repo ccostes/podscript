@@ -2,7 +2,7 @@ import logging, smtplib, ssl
 from pathlib import Path
 from dotenv import dotenv_values
 import urllib.request
-from urlparse import urlparse
+from urllib.parse import urlparse
 from os.path import splitext
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -29,7 +29,9 @@ def publish(to_email, subject, body, image_url):
     with urllib.request.urlopen(image_url) as f:
         img = MIMEImage(f.read())
     img_extension = get_ext(image_url)
-    img.add_header('Content-ID', f'<logo{img_extension}>')
+    logo_id = f'<logo{img_extension}>'
+    img.add_header('Content-ID', logo_id)
+    logging.info(f"Attached header Content-ID: {logo_id}")
     message.attach(img)
     
     context = ssl.create_default_context()
