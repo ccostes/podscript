@@ -10,12 +10,13 @@ art_url filename on the podcast record.
 """
 email_template = (Path() / 'email_template/template.html').read_text()
 
-def generate_email(episode, image_extension, transcript):
+def generate_body(episode, image_extension, transcript):
     transcript_html = ""
-    for block in transcript:
-        transcript_html += "<p><strong>[" + block['speaker'] + "]</strong></p>"
-        for line in block['text']:
-            transcript_html += "<p>" + line + "</p>"
+    speakers = transcript['speakers']
+    lines = transcript['lines']
+    for line in lines:
+        transcript_html += "<p><strong>[" + speakers[line['speaker']]['name'] + "]</strong></p>"
+        transcript_html += "<p>" + line['text'] + "</p>"
 
     template_params = {
         'episode_title': episode['title'],
@@ -38,7 +39,7 @@ def main(transcript_file):
     with open(transcript_file) as f:
         transcript = json.load(f)
     with open('email.html', 'w') as f:
-        f.write(generate_email(episode=episode, transcript=transcript))
+        f.write(generate_body(episode=episode, transcript=transcript))
 
 if __name__ == "__main__":
     logging.basicConfig(
