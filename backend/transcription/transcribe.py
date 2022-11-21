@@ -130,25 +130,37 @@ def detect_speaker_identification(text):
     return None
 
 def gen_transcript(tracks, segments):
-    transcript = []
+    speaker_lines = []
     lines = merge_dz_segments(tracks=tracks, segments=segments)
+    speaker_map = {}
     speakers = {}
-    # First pass looking for speaker names
     for l in lines:
-        if l['speaker'] not in speakers:
-            speakers[l['speaker']] = {'detected':False, 'name': [f"Speaker {len(speakers) + 1}"]}
-        if speakers[l['speaker']]['detected']:
-            continue
-        # See if speaker identified themselves
-        name = detect_speaker_identification(l['text'])
-        if name is not None:
-            # Found a name!
-            speakers[l['speaker']] = {'detected':True, 'name': name}
-    # Second pass, adding lines to transcript with names
-    for l in lines:
-        name = speakers[l['speaker']]
-        l['speaker'] = " ".join(name['name'])
-        transcript.append(l)
+        speaker_id = l['speaker']
+        if speaker_id not in speaker_map:
+            id = len(speaker_map)
+            speaker_map[speaker_id] = id
+            speakers[id] = {
+                'detected':False,
+                'name': [f"Speaker {len(speakers) + 1}"]
+            }
+        id = speaker_map[speaker_id]
+        if not speakers[id]['detected']:
+            # See if speaker identified themselves
+            name = detect_speaker_identification(l['text'])
+            if name is not None:
+                # Found a name!
+                speakers[id]['detected'] = True
+                speakers[id]['name'] = name
+        # append line to transcript
+        line = {
+            'speaker': id,
+            'text': l['text']
+        }
+        speaker_lines.append(line)
+    transcript = {
+        'speakers': speakers,
+        'lines': speaker_lines,
+    }
     return transcript
 
 def transcribe(filename):
@@ -173,11 +185,11 @@ def transcribe(filename):
 
     # == Pad Speakers ==
     # tracks = pad_audio(audio=audio, tracks=tracks, pad_duration=spacermilli, out_filename=padded_audio)
-    tracks = pad_audio(audio=audio, tracks=tracks, pad_duration=0, out_filename=padded_audio)
+    tracks = pad_audio(audio=audio, tracks=tracks, pad_duration=200, out_filename=padded_audio)
 
     # == Transcribe ==
     model = whisper.load_model("small.en")
-    result = model.transcribe(filename, beam_size=5, best_of=5)
+    result = model.transcribe(padded_audio, beam_size=5, best_of=5)
     segments = result["segments"]
 
     # == Generate Transcript ==
@@ -185,8 +197,9 @@ def transcribe(filename):
     return transcript
 
 def main():
+    import json
     transcript = transcribe(filename="daily_clip.wav")
-    print(transcript)
+    print(json.dumps(transcript, indent = 2))
 
 if __name__ == "__main__":
     logging.basicConfig(
