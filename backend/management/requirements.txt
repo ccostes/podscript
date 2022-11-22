@@ -4,5 +4,6 @@ feedparser
 pathlib
 protobuf
 psycopg2-binary
+pystache
 python-dotenv
 sgmllib3k

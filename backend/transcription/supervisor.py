@@ -1,7 +1,6 @@
 from signal import SIGINT, SIGTERM
 import logging, json, requests, subprocess
 from urllib.parse import urlparse, unquote
-from os.path import splitext
 import sys
 from pathlib import Path
 sys.path.append(str(Path.cwd().parent))

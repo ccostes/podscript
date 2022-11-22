@@ -4,6 +4,7 @@ from dotenv import dotenv_values
 import urllib.request
 from urllib.parse import urlparse
 from os.path import splitext
+import mimetypes
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -26,12 +27,11 @@ def publish(to_email, subject, body, image_url):
     message["To"] = to_email
     message.attach(MIMEText(body, "html"))
 
-    with urllib.request.urlopen(image_url) as f:
-        img = MIMEImage(f.read())
     img_extension = get_ext(image_url)
+    with urllib.request.urlopen(image_url) as f:
+        img = MIMEImage(f.read(), _subtype=mimetypes.guess_type('f' + img_extension))
     logo_id = f'<logo{img_extension}>'
     img.add_header('Content-ID', logo_id)
-    logging.info(f"Attached header Content-ID: {logo_id}")
     message.attach(img)
     
     context = ssl.create_default_context()

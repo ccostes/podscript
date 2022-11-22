@@ -1,13 +1,8 @@
 """
 Keep feeds updated! Listens to feed DB inserts to do initial fetch for new feeds.
 """
-import asyncio
-import json, logging, datetime, time, re, unicodedata
+import logging, datetime, time, re, unicodedata
 from urllib.parse import urlparse
-import sys
-from pathlib import Path
-sys.path.append(str(Path.cwd().parent))
-from util.supabase import supa_connect
 import feedparser
 
 def to_directory_name(value, allow_unicode=False):
@@ -61,7 +56,6 @@ def update_podcast(cursor, feed_url, data):
     # now merge - update keys will override existing
     merged = existing_filtered | update_filtered 
 
-    logging.info(f"Inserting podcast update: {merged}")
     insert_query = """
     UPDATE podcasts SET
         feed_url=%s,
@@ -111,13 +105,11 @@ def insert_episode(cursor, podcast_id, ep):
                 description = ep['summary_detail']['value']
 
     published = datetime.datetime.fromtimestamp(time.mktime(ep.published_parsed)).strftime('%Y-%m-%d %H:%M:%S')
-    link = "" if ep.link is None else ep.link
-    file_size = 0
     url = ""
     mime_type = ""
     for l in ep.links:
         if l.rel == "enclosure":
-            file_size = l.length
+            # file_size = l.length
             url = l.href
             mime_type = l.type
     if 'itunes_duration' not in ep:
@@ -155,8 +147,8 @@ def insert_episode(cursor, podcast_id, ep):
         description,
         url,
         published,
-        ep.id,
-        ep.link,
+        ep.get('id'),
+        ep.get('link'),
         mime_type,
         total_time,
         description_html,
@@ -171,21 +163,20 @@ def insert_new_episodes(cursor, data, podcast_id):
         # initial import - only want to add the most recent episode (should be the first entry)
         logging.info(f"Initial import for podcast {podcast_id}, inserting first episode only")
         insert_episode(cursor=cursor, podcast_id=podcast_id, ep=data.entries[0])
-        return
+        return 1
     
-    published_after = most_recent['published']
+    published_after = most_recent['published'].replace(tzinfo=None)
     count = 0
     for ep in data.entries:
         # Make sure episode is published more recently than published_after
-        published = datetime.datetime.fromtimestamp(time.mktime(ep.published_parsed))
-        if published < published_after:
-            continue
-        count += 1
-        insert_episode(cursor=cursor, podcast_id=podcast_id, ep=ep)
+        published = datetime.datetime.fromtimestamp(time.mktime(ep.published_parsed)).replace(tzinfo=None)
+        if published > published_after:
+            count += 1
+            insert_episode(cursor=cursor, podcast_id=podcast_id, ep=ep)
     logging.info(f"Inserted {count} new episodes for podcast {podcast_id}!")
+    return count
 
 def update_feed(cursor, podcast):
-    logging.info(f"Updating feed for podcast {podcast['id']}!")
     # Attempt to fetch feed
     d = feedparser.parse(
         podcast['feed_url'],
@@ -213,33 +204,25 @@ def update_feed(cursor, podcast):
         data=d
     )
     # Import new episodes
-    insert_new_episodes(
+    count = insert_new_episodes(
         cursor=cursor,
         podcast_id=updated['id'],
         data=d
     )
-
-def main():
-    conn = supa_connect()
-    cursor = conn.cursor()
-    cursor.execute(f"LISTEN new_podcast;")
-
-    def handle_notify():
-        conn.poll()
-        for notify in conn.notifies:
-            podcast = json.loads(notify.payload)['record']
-            update_feed(cursor=cursor, podcast=podcast)
-        conn.commit()
-        conn.notifies.clear()
-
-    logging.info("Listening for Supabase new_podcast notifications!")
-    loop = asyncio.new_event_loop()
-    loop.add_reader(conn, handle_notify)
-    loop.run_forever()
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        level=logging.INFO,
-        datefmt='%Y-%m-%d %H:%M:%S')
-    main()
+    if count > 0:
+        # Update pending_publish_id for all subscriptions
+        logging.info("Inserted new episodes, updating subscriptions pending_publish_id")
+        cursor.execute("""
+        UPDATE subscriptions as sub SET pending_publish_id = 
+            CASE WHEN sub.last_published IS NULL THEN 
+                (SELECT id FROM episodes 
+                    WHERE podcast_id = sub.podcast_id 
+                    ORDER BY published DESC LIMIT 1)
+            ELSE
+                (SELECT id from episodes 
+                    where podcast_id = sub.podcast_id 
+                    and published > sub.last_published 
+                    order by published ASC LIMIT 1) 
+            END
+            WHERE pending_publish_id IS NULL
+        """)

@@ -7,7 +7,6 @@ psycopg2-binary
 pyannote.audio
 git+https://github.com/pyannote/pyannote-audio
 pydub
-pystache
 python-dotenv
 sgmllib3k
 whisper

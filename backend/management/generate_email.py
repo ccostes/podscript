@@ -15,7 +15,9 @@ def generate_body(episode, image_extension, transcript):
     speakers = transcript['speakers']
     lines = transcript['lines']
     for line in lines:
-        transcript_html += "<p><strong>[" + speakers[line['speaker']]['name'] + "]</strong></p>"
+        transcript_html += "<p><strong>["
+        transcript_html += " ".join(speakers[str(line['speaker'])]['name'])
+        transcript_html += "]</strong></p>"
         transcript_html += "<p>" + line['text'] + "</p>"
 
     template_params = {
