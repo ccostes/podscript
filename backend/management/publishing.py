@@ -25,11 +25,8 @@ def publish_episode(cursor, episode, subscriptions):
     cursor.execute("SELECT * from podcasts WHERE id = %s", [episode['podcast_id']])
     podcast = cursor.fetchone()
     
-    # Image is episode image if it has one, otherwise podcast image
-    if 'image_url' in episode and episode['image_url'] is not None:
-        image_url = episode['image_url']
-    else:
-        image_url = podcast['image_url']
+    # Just use podcast feed image - episode images are too inconsistent 
+    image_url = podcast['image_url']
 
     # Get email HTML from R2
     transcript_json = r2_retrieve(episode['filename'])
@@ -37,7 +34,9 @@ def publish_episode(cursor, episode, subscriptions):
     email_html = generate_body(
         episode=episode,
         image_extension=get_ext(image_url),
-        transcript=transcript
+        transcript=transcript,
+        preview=episode.get('description')[:120] + '…',
+        rights=podcast.get('rights') if 'rights' in podcast and podcast['rights'] is not None else "© " + podcast['author'],
     )
     # Subject is <podcast title>: <episode title>
     subject = f"{podcast['title']}: {episode['title']}"

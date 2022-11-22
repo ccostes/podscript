@@ -5,9 +5,9 @@ import urllib.request
 from urllib.parse import urlparse
 from os.path import splitext
 import mimetypes
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from email.message import EmailMessage
+
 """
 Sends email
 """
@@ -20,20 +20,28 @@ def get_ext(url):
     root, ext = splitext(parsed.path)
     return ext
 
-def publish(to_email, subject, body, image_url):
-    message = MIMEMultipart('mixed')
+def publish(to_email, subject, body, image_url=None):
+    message = EmailMessage()
     message['Subject'] = subject
     message["From"] = from_email
     message["To"] = to_email
-    message.attach(MIMEText(body, "html"))
 
+    # set plain text body
+    message.set_content("Plain text body")
+
+    # add HTML
+    message.add_alternative(body, subtype='html')
+
+    # Create content-ID
     img_extension = get_ext(image_url)
+    cid = '<logo' + img_extension + '>'
     with urllib.request.urlopen(image_url) as f:
         img = MIMEImage(f.read(), _subtype=mimetypes.guess_type('f' + img_extension))
-    logo_id = f'<logo{img_extension}>'
-    img.add_header('Content-ID', logo_id)
-    message.attach(img)
-    
+        img.add_header('Content-ID', cid)
+        img.add_header('Content-Disposition', 'inline', filename='logo' + img_extension)
+        # attach it
+        message.attach(img)
+
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(env['GMAIL_APP_USER'], env['GMAIL_APP_PASSWORD'])

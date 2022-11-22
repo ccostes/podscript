@@ -1,9 +1,15 @@
 <mjml>
+  <mj-head>
+    <mj-preview>{{preview}}</mj-preview>
+  </mj-head>
   <mj-body>
     <mj-section>
       <mj-column>
-        <mj-text align="center" font-size="10px" color="#626262">Generated for you with 💛 by Podscript</mj-text>
-        <mj-image width="100px" href="{{link}}" src="cid:logo{{image_extension}}"></mj-image>
+        <mj-text align="center" font-size="10px" color="#626262">
+          Generated for you with 💛 by Podscript<br>
+          Transcription issues?  <a>Report Issue</a>   Unsubscribe?  <a>Manage Subscription<a/>
+        </mj-text>
+        <mj-image width="100px" href="{{link}}" src="cid:{{cid}}" alt="Podcast Logo"></mj-image>
         <mj-text align="center" font-size="22px" font-family="Helvetica, Arial, sans-serif">
           {{episode_title}}
         </mj-text>
@@ -13,6 +19,26 @@
         <mj-divider border-color="#F45E43"></mj-divider>
         <mj-text line-height="150%" font-size="16px" font-family="Helvetica, Arial, sans-serif">
           {{{body}}}
+        </mj-text>
+        <mj-divider width="10%" border-width="1px" border-color="#626262" />
+        <mj-text align="center" font-size="12px">
+          {{rights}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column width="90%">
+        <mj-divider width="100%" border-width="1px" border-color="#626262" />
+        <mj-text align="center" font-size="10px" color="#626262">
+          The above transcript was automatically generated and is intended soley for the 
+          personal non-commercial use of the user, who accepts full responsibility for its use.
+          Automatic transcription may result in errors, and Podscript assumes no responsibility 
+          or liability for any errors or omissions in the content of this transcription. This
+          transcription is provided on an "as is" basis with no guarantees of completeness,
+          accuracy, usefulness, or timeliness, and without any warranties of any kind whatsoever,
+          express or implied. 
+          Podscript claims no ownership of, and is not responsible for the episode content,
+          including any views, information, or opinion expressed.
         </mj-text>
       </mj-column>
     </mj-section>

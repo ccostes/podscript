@@ -36,6 +36,7 @@ def update_podcast(cursor, feed_url, data):
     update['image_url'] = data.feed.image.href
     update['http_modified'] = data.get('modified')
     update['http_etag'] = data.get('etag')
+    update['rights'] = data.feed.get('rights')
     
     # get existing record
     cursor.execute("SELECT * FROM podcasts WHERE feed_url = %s", [feed_url])
@@ -66,7 +67,8 @@ def update_podcast(cursor, feed_url, data):
         image_url=%s, 
         http_modified=%s, 
         http_etag=%s, 
-        file_prefix=%s
+        file_prefix=%s,
+        rights=%s
     WHERE id = %s
     """
     cursor.execute(insert_query, [
@@ -79,6 +81,7 @@ def update_podcast(cursor, feed_url, data):
         merged.get('http_modified'),
         merged.get('http_etag'),
         merged.get('file_prefix'),
+        merged.get('rights'),
         merged.get('id'),
     ])
     cursor.execute("SELECT * FROM podcasts WHERE id = %s", [merged['id']])

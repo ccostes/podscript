@@ -10,7 +10,7 @@ art_url filename on the podcast record.
 """
 email_template = (Path() / 'email_template/template.html').read_text()
 
-def generate_body(episode, image_extension, transcript):
+def generate_body(episode, image_extension, transcript, preview, rights):
     transcript_html = ""
     speakers = transcript['speakers']
     lines = transcript['lines']
@@ -25,7 +25,9 @@ def generate_body(episode, image_extension, transcript):
         'episode_description': episode['description_html'],
         'body': transcript_html,
         'link': episode['link'],
-        'image_extension': image_extension,
+        'cid': 'logo' + image_extension,
+        'preview': preview,
+        'rights': rights,
     }
     # logging.info(f"Rendering email html with params: {template_params}")
     email_html = pystache.render(email_template, template_params)
