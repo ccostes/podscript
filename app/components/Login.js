@@ -8,6 +8,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [searchSelection, setSearchSelection] = useState(null);
   const [searchFocus, setSearchFocus] = useState(false);
+  const [loginResult, setLoginResult] = useState(null);
   const emailInputReference = useRef(null);
   
   const handleLogin = async (email, podcast) => {
@@ -25,7 +26,8 @@ export default function Login() {
         }
       });
       if (error) throw error;
-      alert('Check your email for the login link!');
+      // Signup complete!
+      setLoginResult(true)
     } catch (error) {
       alert(error.error_description || error.message);
     }
@@ -33,7 +35,8 @@ export default function Login() {
   
   function handleSearchSelect(podcast) {
     setSearchSelection(podcast);
-    emailInputReference.current.focus();
+    if(emailInputReference.current)
+    {emailInputReference.current.focus();}
   }
   
   function handleResultSelect(){
@@ -47,35 +50,64 @@ export default function Login() {
       return (
         <Search results={[]} focus={searchFocus} handleSelect={handleSearchSelect}/>  
         )
-      } else {
-        // Show selected podcast
-        return (
-          <Card podcast={searchSelection} handleSelect={handleResultSelect} />
-          )
-        }
-      }
-      
+    } else {
+      // Show selected podcast
       return (
-        <div className='container mx-auto grid place-content-center min-h-screen'>
-        {searchOrSelection()}
-        <input
-          className='mb-4 border-2 border-gray-500 rounded-xl p-4 w-full'
+        <Card podcast={searchSelection} handleSelect={handleResultSelect} classes='rounded-xl' />
+        )
+    }
+  }
+  function emailInput() {
+    if (searchSelection) {
+      return (
+        <div className='pt-2'>
+          <input
+          autoFocus
+          className='mb-4 border-2 border-gray-500 rounded-xl p-4 w-full focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:border-transparent'
           type='email'
           name='email'
           placeholder='Your email'
           value={email}
           ref={emailInputReference}
           onChange={(e) => setEmail(e.target.value)}
-        />
-        <button
+          />
+          <button
           onClick={(e) => {
             e.preventDefault();
             handleLogin(email, searchSelection);
           }}
-          className='w-full mt-4 p-2 pl-5 pr-5 bg-blue-500 text-gray-100 text-lg rounded-lg focus:border-4 border-blue-300'
-        >
-        <span>Subscribe!</span>
-        </button>
+          className='w-full p-2 pl-5 pr-5 bg-blue-500 text-gray-100 text-lg rounded-lg focus:border-4 border-blue-300'
+          >
+          <span>Subscribe!</span>
+          </button>
+        </div>
+      )
+    }
+  }
+  function signupOrResult(){
+    if (!loginResult) {
+      return (
+        <div className='w-96 mx-auto'>
+        {searchOrSelection()}
+        {emailInput()}
         </div>
         );
-      }
+    } else {
+      return (
+        <div className='mx-auto p-8 place-content-center text-center text-2xl font-raleway'>
+          Signup Success!<br />Check your email for the verification link
+        </div>
+      )
+    }
+  }
+     
+return (
+  <div>
+    <div className='mx-auto p-8 place-content-center text-center text-5xl font-raleway'>
+      <p className="p-2">Your Favorite Podcasts</p>
+      <p className="">Now in your Inbox</p>
+    </div> 
+    {signupOrResult()}
+  </div>
+  );
+}

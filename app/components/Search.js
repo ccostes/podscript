@@ -83,19 +83,19 @@ function Search({ results, focus, handleSelect }) {
     }
 
   return (
-    <div className='w-96 place-self-center'>
+    <div className='w-96 place-self-center text-black'>
       <div className="text-gray-500">
         <div class="w-full relative">
             <input 
                 type="text" 
-                class="w-full p-2 pl-8 rounded border border-gray-200 bg-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:border-transparent" 
+                class="w-full p-2 pl-8 rounded border border-gray-200 focus:bg-slate focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:border-transparent" 
                 placeholder="Search Podcasts" 
                 onChange = {handleChange}
                 ref={inputReference}
                 autoComplete="off"
                 onKeyUp={searchQueryChanged}
             />
-            <svg class="w-4 h-4 absolute left-2.5 top-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-4 h-4 absolute left-2.5" style={{top: 0.8+'em'}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
         </div>

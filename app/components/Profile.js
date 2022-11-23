@@ -17,7 +17,9 @@ export default function Profile({ session }) {
 
     return (
     <div className='container mx-auto grid place-content-center min-h-screen'>
-      <p>Oh hi there {session.user.email}</p>
+      <p>Success! Your email has been confirmed and your subscription is now active!</p>
+      <p>You will receive the latest episode shortly, and each new episode when they are available.</p>
+      {/* <p>Oh hi there {session.user.email}</p>
       <button
         className="mt-2 rounded bg-green-500 py-2 px-4 font-bold text-white hover:bg-green-700"
         onClick={invokeNewUser}
@@ -33,7 +35,7 @@ export default function Profile({ session }) {
         onClick={() => supabase.auth.signOut()}
       >
         Logout
-      </button>
+      </button> */}
     </div>
   );
 }

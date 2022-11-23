@@ -1,3 +1,23 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+main {
+    background-color: #faf7ebc9;
+    /* background-color: #1e1e1e; */
+}
+.searchList li:after {
+    content: "";
+    display: block;
+    width: 70%;
+    margin: 0.2em auto 0;
+    border-bottom: 1px solid #999;
+}
+.searchResult {
+    display: block;
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.searchResult:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
