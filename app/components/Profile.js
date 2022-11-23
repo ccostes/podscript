@@ -16,8 +16,8 @@ export default function Profile({ session }) {
     // }, []);
 
     return (
-    <div className='w-1/2 mx-auto p-8 place-content-center text-center text-2xl font-raleway'>
-      <p>Success!<br />Your your subscription is now active! You will receive the latest episode shortly, 
+    <div className='max-w-lg mx-auto p-8 place-content-center text-center text-2xl font-raleway'>
+      <p>Success!<br /><br />Your your subscription is now active!<br />You will receive the latest episode shortly, 
       and each new episode as they are available.<br /><br />Welcome to Podscript!
       </p>
     </div>
