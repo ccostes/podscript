@@ -63,7 +63,7 @@ export default function Login() {
         <div className='pt-2'>
           <input
           autoFocus
-          className='mb-4 border-2 border-gray-500 rounded-xl p-4 w-full focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:border-transparent'
+          className='text-black mb-4 border-2 border-gray-500 rounded-xl p-4 w-full focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:border-transparent'
           type='email'
           name='email'
           placeholder='Your email'
@@ -95,7 +95,7 @@ export default function Login() {
     } else {
       return (
         <div className='mx-auto p-8 place-content-center text-center text-2xl font-raleway'>
-          Signup Success!<br />Check your email for the verification link
+          Success!<br />Check your email for the verification link
         </div>
       )
     }
