@@ -15,6 +15,8 @@ def generate_body(episode, image_extension, transcript, preview, rights):
     speakers = transcript['speakers']
     lines = transcript['lines']
     for line in lines:
+        if len(line['text'].strip()) == 0:
+            continue
         transcript_html += "<p><strong>["
         transcript_html += " ".join(speakers[str(line['speaker'])]['name'])
         transcript_html += "]</strong></p>"
