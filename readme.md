@@ -1,8 +1,18 @@
 # Podscript
 
-Service enabling users to subscribe to podcasts and receive transcripts by email when each new episode is available.
+Service enabling users to subscribe to podcasts and receive episode transcripts by email.
 
-I developed this when OpenAI's Whisper was released and got everything working, but decided against launching it myself so open-sourcing it instead.
+  Landing Page
+    
+  <img src="landingpage.png" alt="Landing Page" width="400">
+    
+  Example Transcript Email <br />
+    
+  <img src="email.jpg" alt="Example Transcript Email" width="400">
+
+I developed this shortly after OpenAI's Whisper was released with the idea of launching it as a product, but decided not to move forward with that for various reasons and am open-sourcing it instead.
+
+All of the core functionality is working, so hopefully it can be useful to somebody!
 
 ## Architecture
 The frontend is a relatively simple NextJS app that allows users to sign up and manage their podcast subscriptions.
